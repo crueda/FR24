@@ -14,18 +14,15 @@
         <script src="./js/jquery.min.js" type="text/javascript"></script>
 
         <!--script src="http://code.jquery.com/jquery-2.1.3.min.js" type="text/javascript"></script-->
-
         <script src="./js/ol3-layerswitcher.js" type="text/javascript"></script>
   </script>
  
   <script src="http://maps.google.com/maps/api/js?v=3&amp;sensor=false"></script>
+  <!--script type="text/javascript" src="aviones_reducido.json"></script-->
 
-<!--script type="text/javascript" src="aviones_reducido.json"></script-->
-
-<script type="text/javascript">
-    
+<script type="text/javascript">    
     var mapOL;
-
+    var dict = {};
 </script>
 
 
@@ -35,93 +32,39 @@
     <body>
         <div id="olmap" style="width:1400px;height:800px;"></div>
 
-
     <script type="text/javascript">
 
-var image = new ol.style.Circle({
-  radius: 10,
-  //fill: null,
-  fill: new ol.style.Fill({
-    //color: 'red'
-    color: 'rgba(255,0,0,0.2)'
-  }),
-  stroke: new ol.style.Stroke({color: 'red', width: 0})
-});
+        var image = new ol.style.Circle({
+          radius: 10,
+          //fill: null,
+          fill: new ol.style.Fill({
+            //color: 'red'
+            color: 'rgba(255,0,0,0.2)'
+          }),
+          stroke: new ol.style.Stroke({color: 'red', width: 0})
+        });
 
-var styles = {
-  'Point': [new ol.style.Style({
-    image: image
-  })],
+        var styles = {
+          'Point': [new ol.style.Style({
+            image: image
+          })],
+          'MultiPoint': [new ol.style.Style({
+            image: image
+          })],        
+          'Circle': [new ol.style.Style({
+            stroke: new ol.style.Stroke({
+              color: 'red',
+              width: 2
+            }),
+            fill: new ol.style.Fill({
+              color: 'rgba(255,0,0,0.2)'
+            })
+          })]
+        };
 
-  'PointKyros': [new ol.style.Style({
-    image: image
-  })],
-
-  'LineString': [new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: 'green',
-      width: 6
-    })
-  })],
-  'MultiLineString': [new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: 'green',
-      width: 1
-    })
-  })],
-  'MultiPoint': [new ol.style.Style({
-    image: image
-  })],
-  'MultiPolygon': [new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: 'red',
-      width: 1
-    }),
-    fill: new ol.style.Fill({
-      color: 'rgba(255, 255, 0, 0.1)'
-    })
-  })],
-  'Polygon': [new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: 'green',
-      fill: 'red',
-      lineDash: [4],
-      width: 5
-    }),
-    fill: new ol.style.Fill({
-      color: 'rgba(0, 0, 255, 0.1)'
-    })
-  })],
-  'GeometryCollection': [new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: 'magenta',
-      width: 2
-    }),
-    fill: new ol.style.Fill({
-      color: 'magenta'
-    }),
-    image: new ol.style.Circle({
-      radius: 10,
-      fill: null,
-      stroke: new ol.style.Stroke({
-        color: 'magenta'
-      })
-    })
-  })],
-  'Circle': [new ol.style.Style({
-    stroke: new ol.style.Stroke({
-      color: 'red',
-      width: 2
-    }),
-    fill: new ol.style.Fill({
-      color: 'rgba(255,0,0,0.2)'
-    })
-  })]
-};
-
-      var styleFunction = function(feature, resolution) {
-              return styles[feature.getGeometry().getType()];
-      };
+        var styleFunction = function(feature, resolution) {
+          return styles[feature.getGeometry().getType()];
+        };
 
 
         function view() {
@@ -133,26 +76,7 @@ var styles = {
         }
 
 
-var myVar;
-
-function myFunction() {
-    myVar = setTimeout(alertFunc, 1000);
-}
-
-function alertFunc() {
-    //alert("Hello!");
-
-    var miGeojsonFormat2 = new ol.source.GeoJSON({
-              projection : 'EPSG:3857',
-              url : './aviones.json'
-            });
-
-           miGeojsonSource.setSource(miGeojsonFormat2);
-
-
-    myFunction();
-}
-
+        
 
 /*
 $.ajax({
@@ -196,240 +120,200 @@ $(function() {
 
 */
 
-var allFeatures = [];
+    var allFeatures = [];
+
+    var vectorSource = new ol.source.Vector({
+     features: allFeatures
+    });
+
+    var vectorLayer = new ol.layer.Vector({
+      title: 'Tracking',
+      style: styles,
+      source: vectorSource
+    });
 
 
 
-        var iconFeature = new ol.Feature({
-           geometry: new ol.geom.Point(ol.proj.transform([-5.69, 43.0], 'EPSG:4326',     
-          'EPSG:3857')),
-          name: 'Island',
-          id: '2',
-          matricula: '1615-FDW',
-          population: 4000,
-          rainfall: 500
-        });
+    function add(ident, lon, lat, heading) {
+      var geo_point = new ol.geom.Point(ol.proj.transform([lon, lat], 'EPSG:4326',     
+        'EPSG:3857'));
 
+      var iconFeature = new ol.Feature({
+         geometry: geo_point,
+      });
+
+      if (heading < 30) {
         var iconStyle = new ol.style.Style({
-          image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
-            //anchor: [0.1, 0.1],
-            //anchorXUnits: 'pixels',
-            //anchorYUnits: 'pixels',
-            //scale: 0.4,
-            src: 'img/car.png'
-          }))
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros.png'
+         }))
         });
 
-        iconFeature.setStyle(iconStyle);
-        iconFeature.setId('aaaa');
-
-        //iconFeature.setGeometryName('aaa');
-
-        allFeatures.push(iconFeature);
-
-        var vectorSource = new ol.source.Vector({
-          //features: [markerFeatures, lineFeatures, zoneFeatures]
-          features: allFeatures
+      } else if (heading > 29 && heading < 60) {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros_30.png'
+         }))
         });
 
-        var vectorLayer = new ol.layer.Vector({
-          title: 'Tracking',
-          style: styles,
-          source: vectorSource
+      } else if (heading > 59 && heading < 90) {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros_60.png'
+         }))
         });
 
+      } else if (heading > 89 && heading < 120) {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros_90.png'
+         }))
+        });
 
+      } else if (heading > 119 && heading < 150) {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros_120.png'
+         }))
+        });
 
-//var miVectorSource = new ol.source.Vector();
+      } else if (heading > 149 && heading < 180) {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros_150.png'
+         }))
+        });
 
-var miGeojsonFormat = new ol.source.GeoJSON({
-    projection : 'EPSG:3857',
-    url : './aviones.json'
-  });
+      } else if (heading > 179 && heading < 210) {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros_180.png'
+         }))
+        });
 
-var miGeojsonSource = new ol.layer.Vector({
-  title: 'JSON',
-  source: miGeojsonFormat,
-  style: new ol.style.Style({
-    image: image
-  }),
-  visible: true
-});
+      } else if (heading > 209 && heading < 240) {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros_210.png'
+         }))
+        });
 
-/*
-window.setTimeout(function() {
-  $.ajax('http://example.com/data.json', function(data) {
-    var features = miGeojsonFormat.readFeatures(data
-        {featureProjection:"EPSG:3857"});
-    miGeojsonSource.clear();
-    miGeojsonSource.addFeatures(features);
-  });
-}, 5000);
-*/
+      } else if (heading > 239 && heading < 270) {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros_240.png'
+         }))
+        });
 
+      } else if (heading > 269 && heading < 300) {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros_270.png'
+         }))
+        });
 
+      } else if (heading > 299 && heading < 330) {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros_300.png'
+         }))
+        });
 
-        // AÑADIR CAPA
-        function reloadLayer0() {
-           var miGeojsonFormat2 = new ol.source.GeoJSON({
-              projection : 'EPSG:3857',
-              url : './aviones.json'
-            });
+      } else if (heading > 329 && heading < 361) {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros_330.png'
+         }))
+        });
 
-           miGeojsonSource.setSource(miGeojsonFormat2);
+      } else {
+        var iconStyle = new ol.style.Style({
+         image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
+          scale: 0.5,
+          src: 'img/plane_kyros.png'
+         }))
+        });      
 
-            myFunction();
-        }
+      }
 
-        function add(ident, lon, lat) {
+      iconFeature.setStyle(iconStyle);
+      iconFeature.setId(ident);
+            
+      vectorSource.addFeature(iconFeature);
+    }
 
-          //alert (ident);
+        
 
-
-          var geo_point = new ol.geom.Point(ol.proj.transform([lon, lat], 'EPSG:4326',     
-            'EPSG:3857'));
-
-          var iconFeature = new ol.Feature({
-             geometry: geo_point,
-             //id: ident
-          });
-
-          var iconStyle = new ol.style.Style({
-            image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
-              src: 'img/plane_kyros.png'
-            }))
-          });
-
-          iconFeature.setStyle(iconStyle);
-          iconFeature.setId(ident);
-          
-          vectorSource.addFeature(iconFeature);
-        }
-
-        function reloadLayer1() {
-          
-          vectorSource.clear();
-          
-          
-
-          var json_aviones = '{"type": "FeatureCollection", "features": [{"geometry": {"type": "Point", "coordinates": [-3.5249, 39.7806]}, "properties": {"name": "122"}, "type": "Feature"}, {"geometry": {"type": "Point", "coordinates": [-4.9518, 41.328]}, "properties": {"name": "123"}, "type": "Feature"}, {"geometry": {"type": "Point", "coordinates": [-3.1565, 40.8064]}, "properties": {"name": "124"}, "type": "Feature"}]}';
-
-          
-          var json_parsed = $.parseJSON(json_aviones);
-          //var json_parsed = $.parseJSON(data);
-
-          for (var u = 0; u < json_parsed.features.length; u++){
-              var feature = json_parsed.features[u];
-              //add (feature.properties.name,feature.geometry.coordinates[0],feature.geometry.coordinates[1]);
-              add ('id_plane',feature.geometry.coordinates[0],feature.geometry.coordinates[1]);
-          }
-
- 
-          //alert(json["type"]); //mkyong
-        }
-
-         function initLayer() {
-
-
+    function initLayer() {
           //vectorSource.clear();
 
-          $.getJSON( "aviones_reducido.json", function( data ) {
+          $.getJSON( "aviones_all.json", function( data ) {
             var items = [];
             $.each( data, function( key, val ) {
               //items.push( "<li id='" + key + "'>" + val + "</li>" );
               //alert (val.geometry.coordinates);
               //check (val.properties.name,val.geometry.coordinates[0],val.geometry.coordinates[1]);
-              add (val.properties.name,val.geometry.coordinates[0],val.geometry.coordinates[1]);
+              add (val.properties.name,val.geometry.coordinates[0],val.geometry.coordinates[1],val.properties.heading);
+              dict[val.properties.name] = [val.geometry.coordinates[0],val.geometry.coordinates[1]];
             });         
            
         });          
       }
 
 
-        function reloadLayer() {
+    function reloadLayer() {
+      //vectorSource.clear();
 
-
-          //vectorSource.clear();
-
-          $.getJSON( "aviones_reducido.json", function( data ) {
-            var items = [];
-            $.each( data, function( key, val ) {
-              //items.push( "<li id='" + key + "'>" + val + "</li>" );
-              //alert (val.geometry.coordinates);
-              check (val.properties.name,val.geometry.coordinates[0],val.geometry.coordinates[1]);
-              //add (val.properties.name,val.geometry.coordinates[0],val.geometry.coordinates[1]);
-            });
+      $.getJSON( "aviones_all.json", function( data ) {
+        var items = [];
+        $.each( data, function( key, val ) {
+          check (val.properties.name,val.geometry.coordinates[0],val.geometry.coordinates[1],val.properties.heading);
+        });    
            
-           
-        });
+      });
+    }
 
-          
-      }
+    function check(ident,lon,lat,heading) {
+      //alert (dict[ident]);
+      //alert([lon,lat]);
 
-        function check(ident,lon,lat) {
-        //all_planes = vectorSource.getFeatures();
-          //if (iFeature!=null) {
-            if (ident == '122') {
-
-            iFeature = vectorSource.getFeatureById(ident);
-            //alert (iFeature.getGeometry());
-            if (iFeature!=null) {
-              //alert("borro");
-              //alert(vectorSource.getFeatures().length);
+      if (dict[ident][0] != lon  || dict[ident][1] != lat) 
+        {
+          iFeature = vectorSource.getFeatureById(ident);
+          if (iFeature!=null) {
+            //alert(vectorSource.getFeatures().length);
+            //alert (ident + "|" + lon + "|" + lat);
             vectorSource.removeFeature(iFeature);
-                add (ident,lon,lat);
-
-            }
+            add (ident,lon,lat,heading);
           }
-
-          //alert (all_planes);
-          //alert (all_planes.length);
-
-          //for (var i = 0; i < all_planes.length; i++){
-          //  alert ( all_planes[i].geometry.name);
-          //}
         }
 
-        </script>
+      }
 
-        <br>
+      </script>
 
+      
+      <br>
 
-        <input type="button" value="initLayer" onclick="javascript:initLayer();" />
+        <input type="button" value="init" onclick="javascript:initLayer();" />
 
-        <input type="button" value="reloadLayer" onclick="javascript:reloadLayer();" />
+        <input type="button" value="reload" onclick="javascript:reloadLayer();" />
 
-        <input type="button" value="cmd" onclick="javascript:cmd();" />
+        <!--input type="button" value="cmd" onclick="javascript:cmd();" /-->
 
         <script type="text/javascript">
-
-
-
-
-
-
-/*
-var vectorSource9 = new ol.source.Vector({
-  format: new ol.format.GeoJSON(),
-  loader: function(extent, resolution, projection) {
-    var url = './a.txt?p=' + extent.join(',');
-    $.ajax({
-      url: url,
-      success: function(data) {
-        vectorSource.addFeatures(vectorSource.readFeatures(data));
-      }
-    }); 
-  },
-  projection: 'EPSG:3857',
-  strategy: ol.loadingstrategy.bbox
-});
-
-var vectorLayer9 = new ol.layer.Vector({
-  title: 'AJAX,
-  source: vectorSource9,
-  style: styleFunction });
-
-*/
 
             mapOL = new ol.Map({
                 target: 'olmap',
@@ -454,37 +338,29 @@ var vectorLayer9 = new ol.layer.Vector({
                   new ol.layer.Group({
                     'title': 'Overlays',
                     layers: [
-                     
-                        //miGeojsonSource,
-                        vectorLayer,
-
-            
-
-                        
+                        vectorLayer,                 
                     ]
                   })
                     
-
                 ],
-                view: new ol.View({
-                    //center: ol.proj.transform([12.1, 54.18], 'EPSG:4326', 'EPSG:3857'),
-                    //zoom: 13
+                view: new ol.View({                  
                     center: ol.proj.transform([-5.69, 40.00], 'EPSG:4326', 'EPSG:3857'),
                     zoom: 6
                 })
-
-
             });
 
+        var layerSwitcher = new ol.control.LayerSwitcher({
+                    tipLabel: 'Capas' // Optional label for button
+        });
+        mapOL.addControl(layerSwitcher);
 
-
-    var layerSwitcher = new ol.control.LayerSwitcher({
-                tipLabel: 'Capas' // Optional label for button
-    });
-    mapOL.addControl(layerSwitcher);
-
-
+        // Desactivar la cache en la llamada ajax al json
+        $(document).ready(function() {
+          $.ajaxSetup({ cache: false });
+        });
 
         </script>
+
+
     </body>
 </html>
