@@ -29,8 +29,10 @@
 <title>OL3 tests</title>
 
     </head>
-    <body>
-        <div id="olmap" style="width:1400px;height:800px;"></div>
+    <!--body onLoad="setTimeout(reloadLayer, 4000);"-->
+    <body onLoad="setTimeout(reloadLayer, 4000);">
+    
+    <div id="olmap" style="width:1400px;height:800px;"></div>
 
     <script type="text/javascript">
 
@@ -93,7 +95,6 @@ $.ajax({
     timeout: 3000 // sets timeout to 3 seconds
 });
 */
-
 /*
 $(function() {
 
@@ -262,9 +263,6 @@ $(function() {
           $.getJSON( "aviones_all.json", function( data ) {
             var items = [];
             $.each( data, function( key, val ) {
-              //items.push( "<li id='" + key + "'>" + val + "</li>" );
-              //alert (val.geometry.coordinates);
-              //check (val.properties.name,val.geometry.coordinates[0],val.geometry.coordinates[1]);
               add (val.properties.name,val.geometry.coordinates[0],val.geometry.coordinates[1],val.properties.heading);
               dict[val.properties.name] = [val.geometry.coordinates[0],val.geometry.coordinates[1]];
             });         
@@ -276,6 +274,8 @@ $(function() {
     function reloadLayer() {
       //vectorSource.clear();
 
+      //alert ("reload");
+
       $.getJSON( "aviones_all.json", function( data ) {
         var items = [];
         $.each( data, function( key, val ) {
@@ -286,20 +286,14 @@ $(function() {
     }
 
     function check(ident,lon,lat,heading) {
-      //alert (dict[ident]);
-      //alert([lon,lat]);
-
       if (dict[ident][0] != lon  || dict[ident][1] != lat) 
         {
           iFeature = vectorSource.getFeatureById(ident);
           if (iFeature!=null) {
-            //alert(vectorSource.getFeatures().length);
-            //alert (ident + "|" + lon + "|" + lat);
             vectorSource.removeFeature(iFeature);
             add (ident,lon,lat,heading);
           }
         }
-
       }
 
       </script>
